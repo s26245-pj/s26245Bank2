@@ -1,6 +1,9 @@
 package com.pjatk.s26245bank2.service;
 
+import com.pjatk.s26245bank2.exception.AccountNotFoundException;
 import com.pjatk.s26245bank2.model.BankAccount;
+import com.pjatk.s26245bank2.model.Transaction;
+import com.pjatk.s26245bank2.model.TransactionStatus;
 import com.pjatk.s26245bank2.repository.BankAccountRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +53,35 @@ class BankAccountServiceTest {
     }
 
     @Test
+    public void shouldNotFindAccountByNotExistingId() {
+        //given
+        AccountNotFoundException notFoundException = assertThrows(AccountNotFoundException.class, () -> bankAccountService.findById(9999));
+
+        //then
+        assertEquals("Account don't exist", notFoundException.getMessage());
+    }
+
+    @Test
     public void successfullyRegister() {
         BankAccount bankAccount = new BankAccount(1, 100, "Kowalski", "Adam");
 
         assertDoesNotThrow(() -> bankAccountService.registerAccount(bankAccount));
+    }
+
+    @Test
+    void shouldWithdraw500_1500ShouldStayAtTheAccount() {
+        //given
+        int id = 2;
+        double amount = 500;
+        Transaction withdrawTransaction;
+
+        //when
+        Mockito.when(bankAccountRepository.findByID(id)).thenReturn(Optional.ofNullable(firstBankAccount));
+        withdrawTransaction = bankAccountService.withdraw(id, amount);
+
+        //then
+        Assertions.assertEquals(TransactionStatus.ACCEPTED, withdrawTransaction.getTransactionStatus());
+        Assertions.assertEquals(1500, withdrawTransaction.getNewBalance());
     }
 
 }
